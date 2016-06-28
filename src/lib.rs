@@ -25,14 +25,14 @@ impl From<gdbwire_result> for Result {
 }
 
 /// gdbmi parser
-pub struct Parser<T> {
+pub struct Parser {
     inner: *mut gdbmi_parser,
-    callback_data: ParserCallback<T>,
+    callback_data: ParserCallback,
 }
 
 /// gdbmi parser callback
-pub struct ParserCallback<T> {
-    data: *mut (Option<T>, *const raw::c_void),
+struct ParserCallback {
+    data: *const raw::c_void,
     inner: gdbmi_parser_callbacks,
 }
 
@@ -83,37 +83,39 @@ impl Output {
     }
 }
 
-unsafe extern "C" fn callback_wrapper<T, F>(context: *mut raw::c_void, output: *mut gdbmi_output)
-    where F: Fn(Option<T>, Vec<Output>)
+unsafe extern "C" fn callback_wrapper<F>(context: *mut raw::c_void, output: *mut gdbmi_output)
+    where F: Fn(Vec<Output>)
 {
-    let (ctx, cb_ptr) = ptr::read(context as *mut (Option<T>, *const F));
-    (*cb_ptr)(ctx, Output::from_raw(output));
+    let cb_ptr = context as *const F;
+    (*cb_ptr)(Output::from_raw(output));
     gdbwire_sys::gdbmi_output_free(output);
 }
 
-impl<T: Debug> ParserCallback<T> {
-    pub fn new<F>(context: Option<T>, callback: F) -> ParserCallback<T>
-        where F: Fn(Option<T>, Vec<Output>)
+impl ParserCallback {
+    fn new<F>(callback: F) -> ParserCallback
+        where F: Fn(Vec<Output>)
     {
         let mut ret = ParserCallback {
             data: unsafe { std::mem::uninitialized() },
             inner: gdbmi_parser_callbacks { ..Default::default() },
         };
         let cb_ptr = &callback as *const F as *const raw::c_void;
-        ret.data = Box::into_raw(Box::new((context, cb_ptr)));
         ret.inner = gdbmi_parser_callbacks {
-            context: ret.data as *mut raw::c_void,
-            gdbmi_output_callback: Some(callback_wrapper::<T, F>),
+            context: cb_ptr as *mut raw::c_void,
+            gdbmi_output_callback: Some(callback_wrapper::<F>),
         };
         ret
     }
 }
 
-impl<T> Parser<T> {
-    pub fn new(callback: ParserCallback<T>) -> Parser<T> {
-        let inner = unsafe { gdbmi_parser_create(callback.inner) };
+impl Parser {
+    pub fn new<F>(callback: F) -> Parser
+        where F: Fn(Vec<Output>)
+    {
+        let parser_callback = ParserCallback::new(callback);
+        let inner = unsafe { gdbmi_parser_create(parser_callback.inner) };
         Parser {
-            callback_data: callback,
+            callback_data: parser_callback,
             inner: inner,
         }
     }
@@ -122,7 +124,7 @@ impl<T> Parser<T> {
         unsafe { gdbmi_parser_push_data(self.inner, cstr.as_ptr(), data.len()) }.into()
     }
 }
-impl<T> Drop for Parser<T> {
+impl Drop for Parser {
     fn drop(&mut self) {
         unsafe {
             gdbmi_parser_destroy(self.inner);

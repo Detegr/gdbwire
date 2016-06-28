@@ -3,19 +3,17 @@ extern crate gdbwire;
 use gdbwire::*;
 
 fn main() {
-    let callback = ParserCallback::<()>::new(None, |ctx, out| {
-        assert!(ctx.is_none());
+    let parser = Parser::new(|out| {
         assert!(out.len() == 1);
         if out[0].kind == OutputKind::ParseError {
             println!("\n  Parse Error {}", out[0].line);
         }
         assert!(out[0].kind != OutputKind::ParseError);
     });
-    let parser = Parser::new(callback);
     main_loop(&parser);
 }
 
-fn main_loop<T>(parser: &Parser<T>) {
+fn main_loop(parser: &Parser) {
     let mut line = String::new();
     loop {
         if let Ok(n) = std::io::stdin().read_line(&mut line) {
