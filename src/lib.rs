@@ -84,7 +84,7 @@ impl Output {
 }
 
 unsafe extern "C" fn callback_wrapper<F>(context: *mut raw::c_void, output: *mut gdbmi_output)
-    where F: Fn(Vec<Output>)
+    where F: Fn(Vec<Output>) + 'static
 {
     let cb_ptr = context as *const F;
     (*cb_ptr)(Output::from_raw(output));
@@ -93,7 +93,7 @@ unsafe extern "C" fn callback_wrapper<F>(context: *mut raw::c_void, output: *mut
 
 impl ParserCallback {
     fn new<F>(callback: F) -> ParserCallback
-        where F: Fn(Vec<Output>)
+        where F: Fn(Vec<Output>) + 'static
     {
         let mut ret = ParserCallback {
             data: unsafe { std::mem::uninitialized() },
@@ -110,7 +110,7 @@ impl ParserCallback {
 
 impl Parser {
     pub fn new<F>(callback: F) -> Parser
-        where F: Fn(Vec<Output>)
+        where F: Fn(Vec<Output>) + 'static
     {
         let parser_callback = ParserCallback::new(callback);
         let inner = unsafe { gdbmi_parser_create(parser_callback.inner) };
