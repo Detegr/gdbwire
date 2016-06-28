@@ -13,10 +13,11 @@ use gdbwire::*;
 fn main() {
     let parser = Parser::new(|out: Vec<Output>| {
         assert!(out.len() == 1);
-        if out[0].kind == OutputKind::ParseError {
-            println!("\n  Parse Error {}", out[0].line);
+        let ref output = out[0];
+        if output.kind == OutputKind::ParseError {
+            println!("\n  Parse Error {}", output.line);
         }
-        assert!(out[0].kind != OutputKind::ParseError);
+        assert!(output.kind != OutputKind::ParseError);
     });
     main_loop(&parser);
 }
