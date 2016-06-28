@@ -1,0 +1,7 @@
+[package]
+name = "gdbwire"
+version = "0.1.0"
+authors = ["Antti Keränen <detegr@gmail.com>"]
+
+[dependencies.gdbwire-sys]
+git = "https://github.com/Detegr/gdbwire-sys"
