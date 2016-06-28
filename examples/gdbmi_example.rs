@@ -3,7 +3,7 @@ extern crate gdbwire;
 use gdbwire::*;
 
 fn main() {
-    let parser = Parser::new(|out| {
+    let parser = Parser::new(|out: Vec<Output>| {
         assert!(out.len() == 1);
         if out[0].kind == OutputKind::ParseError {
             println!("\n  Parse Error {}", out[0].line);

@@ -4,8 +4,6 @@ use gdbwire_sys::*;
 use std::default::Default;
 use std::ffi::{CStr, CString};
 use std::os::raw;
-use std::ptr;
-use std::fmt::Debug;
 
 /// gdbwire result
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -27,12 +25,11 @@ impl From<gdbwire_result> for Result {
 /// gdbmi parser
 pub struct Parser {
     inner: *mut gdbmi_parser,
-    callback_data: ParserCallback,
+    _callback_data: ParserCallback,
 }
 
 /// gdbmi parser callback
 struct ParserCallback {
-    data: *const raw::c_void,
     inner: gdbmi_parser_callbacks,
 }
 
@@ -95,16 +92,13 @@ impl ParserCallback {
     fn new<F>(callback: F) -> ParserCallback
         where F: Fn(Vec<Output>) + 'static
     {
-        let mut ret = ParserCallback {
-            data: unsafe { std::mem::uninitialized() },
-            inner: gdbmi_parser_callbacks { ..Default::default() },
-        };
         let cb_ptr = &callback as *const F as *const raw::c_void;
-        ret.inner = gdbmi_parser_callbacks {
-            context: cb_ptr as *mut raw::c_void,
-            gdbmi_output_callback: Some(callback_wrapper::<F>),
-        };
-        ret
+        ParserCallback {
+            inner: gdbmi_parser_callbacks {
+                context: cb_ptr as *mut raw::c_void,
+                gdbmi_output_callback: Some(callback_wrapper::<F>),
+            },
+        }
     }
 }
 
@@ -115,7 +109,7 @@ impl Parser {
         let parser_callback = ParserCallback::new(callback);
         let inner = unsafe { gdbmi_parser_create(parser_callback.inner) };
         Parser {
-            callback_data: parser_callback,
+            _callback_data: parser_callback,
             inner: inner,
         }
     }
