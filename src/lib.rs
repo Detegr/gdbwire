@@ -10,7 +10,6 @@
 extern crate gdbwire_sys;
 use gdbwire_sys::*;
 
-use std::default::Default;
 use std::ffi::{CStr, CString};
 use std::os::raw;
 
