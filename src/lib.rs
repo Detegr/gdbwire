@@ -246,16 +246,7 @@ pub enum StreamRecord {
 impl From<*mut gdbmi_stream_record> for StreamRecord {
     fn from(rec: *mut gdbmi_stream_record) -> StreamRecord {
         unsafe {
-            let mut p = (*rec).cstring;
-            while (*p) != 0i8 {
-                print!("{} ", *p);
-                p = p.offset(1);
-            }
-            println!("");
-            let c = CStr::from_ptr((*rec).cstring);
-            println!("{:?}", c.to_bytes());
-            let payload = c.to_string_lossy().into_owned();
-            println!("{:?}", payload);
+            let payload = CStr::from_ptr((*rec).cstring).to_string_lossy().into_owned();
             match (*rec).kind {
                 gdbmi_stream_record_kind::GDBMI_CONSOLE => StreamRecord::Console(payload),
                 gdbmi_stream_record_kind::GDBMI_TARGET => StreamRecord::Target(payload),
