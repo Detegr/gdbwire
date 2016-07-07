@@ -14,7 +14,6 @@ fn main() {
     let parser = Parser::new(|out: Vec<Output>| {
         assert!(out.len() == 1);
         let ref output = out[0];
-        println!("{:?}", output.variant);
         if let OutputVariant::Error(_) = output.variant {
             println!("\n  Parse Error {}", output.line);
             assert!(false);
