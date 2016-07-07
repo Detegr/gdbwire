@@ -14,10 +14,11 @@ fn main() {
     let parser = Parser::new(|out: Vec<Output>| {
         assert!(out.len() == 1);
         let ref output = out[0];
-        if output.kind == OutputKind::ParseError {
+        println!("{:?}", output.variant);
+        if let OutputVariant::Error(_) = output.variant {
             println!("\n  Parse Error {}", output.line);
+            assert!(false);
         }
-        assert!(output.kind != OutputKind::ParseError);
     });
     main_loop(&parser);
 }
@@ -30,7 +31,7 @@ fn main_loop(parser: &Parser) {
                 break;
             }
             let result = parser.push(&line);
-            assert!(result == Result::Ok);
+            assert!(result == GdbwireResult::Ok);
         } else {
             break;
         }
